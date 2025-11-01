@@ -3,3 +3,5 @@
 *.md
 *.sql
 README.md
+switch_model.py
+demo.py
