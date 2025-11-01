@@ -284,33 +284,68 @@ export default function DashboardPage() {
               {dashboardData.highPriorityItems.map((item, idx) => (
                 <div
                   key={item.id}
-                  className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer`}
+                  className={`${theme === 'dark' ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-700/50 hover:border-orange-500' : 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-300 hover:border-orange-500'} border rounded-lg p-5 transition-all cursor-pointer hover:shadow-lg`}
                   onClick={() => handleOpenReviewThread(item)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-xs ${theme === 'dark' ? 'bg-blue-600/30 text-blue-300' : 'bg-blue-100 text-blue-700'} px-2 py-0.5 rounded`}>
-                          {item.language}
+                  <div className="space-y-3">
+                    {/* Header with priority indicator */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-orange-500 text-lg">⚡</span>
+                        <span className={`text-xs font-bold ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} uppercase`}>
+                          High Priority
                         </span>
-                        <span className={`text-xs ${theme === 'dark' ? 'bg-purple-600/30 text-purple-300' : 'bg-purple-100 text-purple-700'} px-2 py-0.5 rounded`}>
+                        <span className={`text-xs font-medium ${theme === 'dark' ? 'bg-blue-600/30 text-blue-300' : 'bg-blue-100 text-blue-700'} px-2.5 py-1 rounded-full`}>
+                          {item.language?.toUpperCase()}
+                        </span>
+                        <span className={`text-xs font-medium ${theme === 'dark' ? 'bg-purple-600/30 text-purple-300' : 'bg-purple-100 text-purple-700'} px-2.5 py-1 rounded-full`}>
                           {item.focus}
                         </span>
-                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </span>
                       </div>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-orange-500">
+                          {item.effort_estimation_minutes}m
+                        </p>
+                        <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
+                          to fix
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Code Preview */}
+                    <div className={`${theme === 'dark' ? 'bg-black/40' : 'bg-white'} rounded-md p-3 border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+                      <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-2 flex items-center gap-1`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Code:
+                      </p>
+                      <code className={`text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} font-mono block overflow-hidden text-ellipsis whitespace-nowrap`}>
+                        {item.input_code.substring(0, 120)}{item.input_code.length > 120 ? '...' : ''}
+                      </code>
+                    </div>
+
+                    {/* Issue Preview */}
+                    <div>
+                      <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} mb-1 flex items-center gap-1`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Issues Found:
+                      </p>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>
                         {item.review.substring(0, 150)}...
                       </p>
                     </div>
-                    <div className="ml-4 text-right">
-                      <p className="text-2xl font-bold text-orange-500">
-                        {item.effort_estimation_minutes}m
-                      </p>
-                      <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
-                        estimated
-                      </p>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2 border-t border-orange-700/30">
+                      <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
+                        {new Date(item.created_at).toLocaleDateString()} at {new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                      <span className={`text-xs font-medium ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`}>
+                        💬 Discuss & Fix →
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -333,33 +368,75 @@ export default function DashboardPage() {
               {dashboardData.recentReviews.map((review) => (
                 <div
                   key={review.id}
-                  className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer`}
+                  className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700 hover:border-blue-500' : 'bg-gray-50 border-gray-200 hover:border-blue-500'} border rounded-lg p-5 transition-all cursor-pointer hover:shadow-lg`}
                   onClick={() => handleOpenReviewThread(review)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-xs ${theme === 'dark' ? 'bg-blue-600/30 text-blue-300' : 'bg-blue-100 text-blue-700'} px-2 py-0.5 rounded`}>
-                          {review.language}
+                  <div className="space-y-3">
+                    {/* Header with badges */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium ${theme === 'dark' ? 'bg-blue-600/30 text-blue-300' : 'bg-blue-100 text-blue-700'} px-2.5 py-1 rounded-full`}>
+                          {review.language?.toUpperCase()}
                         </span>
-                        <span className={`text-xs ${theme === 'dark' ? 'bg-purple-600/30 text-purple-300' : 'bg-purple-100 text-purple-700'} px-2 py-0.5 rounded`}>
+                        <span className={`text-xs font-medium ${theme === 'dark' ? 'bg-purple-600/30 text-purple-300' : 'bg-purple-100 text-purple-700'} px-2.5 py-1 rounded-full`}>
                           {review.focus}
                         </span>
-                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {new Date(review.created_at).toLocaleDateString()}
+                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'} flex items-center gap-1`}>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {new Date(review.created_at).toLocaleDateString()} at {new Date(review.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
                       </div>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {review.review.substring(0, 100)}...
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className={`text-xl font-bold ${review.effort_estimation_minutes > 30 ? 'text-orange-500' : 'text-green-500'}`}>
+                            {review.effort_estimation_minutes}m
+                          </p>
+                          <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
+                            effort
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Code Preview */}
+                    <div className={`${theme === 'dark' ? 'bg-black/40' : 'bg-white'} rounded-md p-3 border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+                      <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-2 flex items-center gap-1`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Your Code:
+                      </p>
+                      <code className={`text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} font-mono block overflow-hidden text-ellipsis whitespace-nowrap`}>
+                        {review.input_code.substring(0, 120)}{review.input_code.length > 120 ? '...' : ''}
+                      </code>
+                    </div>
+
+                    {/* Review Preview */}
+                    <div>
+                      <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        AI Review:
+                      </p>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>
+                        {review.review.substring(0, 150)}...
                       </p>
                     </div>
-                    <div className="ml-4 text-right">
-                      <p className={`text-lg font-bold ${textClass}`}>
-                        {review.effort_estimation_minutes}m
-                      </p>
-                      <button className={`text-xs ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}>
-                        💬 Discuss
-                      </button>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                      <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'} flex items-center gap-1`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                        Click to open conversation
+                      </span>
+                      <span className={`text-xs font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                        💬 Discuss with AI →
+                      </span>
                     </div>
                   </div>
                 </div>

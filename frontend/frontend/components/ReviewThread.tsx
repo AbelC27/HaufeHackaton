@@ -151,14 +151,48 @@ export default function ReviewThread({
           </button>
         </div>
 
-        {/* Original Review Section */}
-        <div className="px-6 py-4 border-b border-gray-700 max-h-64 overflow-y-auto">
-          <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
-            Original AI Review:
-          </h3>
-          <div className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4`}>
-            <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap max-h-32 overflow-y-auto`}>
-              {originalReview.substring(0, 500)}...
+        {/* Original Code and Review Section */}
+        <div className="px-6 py-4 border-b border-gray-700 max-h-[400px] overflow-y-auto">
+          {/* Original Code */}
+          <div className="mb-4">
+            <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-2 flex items-center gap-2`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              Your Code:
+            </h3>
+            <div className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4 border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+              <SyntaxHighlighter
+                language={language}
+                style={vscDarkPlus}
+                customStyle={{
+                  margin: 0,
+                  padding: '12px',
+                  background: theme === 'dark' ? '#0d1117' : '#f6f8fa',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  maxHeight: '200px',
+                  overflow: 'auto',
+                }}
+                showLineNumbers
+              >
+                {originalCode}
+              </SyntaxHighlighter>
+            </div>
+          </div>
+
+          {/* Original AI Review */}
+          <div>
+            <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-2 flex items-center gap-2`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              AI Review:
+            </h3>
+            <div className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4 border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap max-h-48 overflow-y-auto`}>
+                {originalReview.length > 800 ? originalReview.substring(0, 800) + '...' : originalReview}
+              </div>
             </div>
           </div>
         </div>
