@@ -74,9 +74,8 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('code_reviews')
-      .select('id, input_code, review, language, focus, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .select('id, input_code, review, language, focus, created_at, tags, effort_estimation_minutes')
+      .order('created_at', { ascending: false });
 
     if (userEmail) {
       query = query.eq('user_email', userEmail);
@@ -97,6 +96,48 @@ export async function GET(request: NextRequest) {
     console.error('Failed to fetch reviews:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch reviews' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Review ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from('code_reviews')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Failed to delete review:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete review' },
       { status: 500 }
     );
   }

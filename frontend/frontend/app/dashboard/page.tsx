@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { useTheme } from '@/contexts/ThemeContext';
 import ReviewThread from '@/components/ReviewThread';
 
 interface DashboardData {
@@ -20,11 +21,11 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [user, setUser] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   
   // Review thread modal
   const [selectedReview, setSelectedReview] = useState<any>(null);
@@ -33,9 +34,6 @@ export default function DashboardPage() {
   const cardBgClass = theme === 'dark' ? 'bg-gray-800' : 'bg-white';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
   const borderClass = theme === 'dark' ? 'border-gray-700' : 'border-gray-300';
-  const bgClass = theme === 'dark' 
-    ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-    : 'bg-gradient-to-br from-gray-50 via-white to-gray-100';
 
   useEffect(() => {
     if (!supabase) return;
@@ -90,7 +88,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className={`min-h-screen ${bgClass} flex items-center justify-center`}>
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
@@ -103,7 +101,7 @@ export default function DashboardPage() {
 
   if (error || !dashboardData) {
     return (
-      <div className={`min-h-screen ${bgClass} flex items-center justify-center p-6`}>
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className={`${cardBgClass} rounded-lg p-8 border ${borderClass} max-w-md w-full text-center`}>
           <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -124,7 +122,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`min-h-screen ${bgClass} p-6`}>
+    <div className="min-h-screen p-6">
       {/* Review Thread Modal */}
       {showReviewThread && selectedReview && (
         <ReviewThread
@@ -144,21 +142,6 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => router.push('/')}
-            className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Review
-          </button>
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-800 text-yellow-400' : 'bg-gray-200 text-gray-700'} hover:opacity-80`}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
         </div>
 
         <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">

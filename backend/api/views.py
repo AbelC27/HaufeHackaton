@@ -311,3 +311,170 @@ def follow_up_review(request):
             {'error': f'An error occurred: {e}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['POST'])
+def score_exercise(request):
+    """
+    AI Exercise Scoring endpoint - Evaluates user's solution to a coding exercise.
+    
+    Expects: {
+        "exercise_description": "Write a function...",
+        "expected_solution": "def func()...",
+        "user_solution": "def func()...",
+        "language": "python",
+        "test_cases": [{"input": ..., "expected": ...}]
+    }
+    Returns: {
+        "ai_review": "Detailed feedback...",
+        "score": 85,
+        "passed_tests": true,
+        "suggestions": ["Use list comprehension...", ...]
+    }
+    """
+    
+    exercise_desc = request.data.get('exercise_description', '')
+    expected_solution = request.data.get('expected_solution', '')
+    user_solution = request.data.get('user_solution', '')
+    language = request.data.get('language', 'python').lower()
+    test_cases = request.data.get('test_cases', [])
+    
+    if not user_solution:
+        return Response(
+            {'error': 'No solution provided.'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Build test case descriptions
+    test_case_text = ""
+    if test_cases:
+        test_case_text = "\n\nTest Cases:\n"
+        for idx, tc in enumerate(test_cases[:5], 1):  # Limit to 5 test cases
+            test_case_text += f"{idx}. Input: {tc.get('input', 'N/A')} → Expected: {tc.get('expected', 'N/A')}\n"
+    
+    # Build comprehensive scoring prompt
+    prompt = f"""
+    You are an expert {language.upper()} programming instructor evaluating a student's solution to a coding exercise.
+    
+    EXERCISE DESCRIPTION:
+    {exercise_desc}
+    {test_case_text}
+    
+    EXPECTED SOLUTION (for reference):
+    ---
+    {expected_solution}
+    ---
+    
+    STUDENT'S SOLUTION:
+    ---
+    {user_solution}
+    ---
+    
+    EVALUATION CRITERIA:
+    1. **Correctness (40 points)**: Does the code solve the problem? Does it handle edge cases?
+    2. **Efficiency (30 points)**: Is the algorithm optimal? What's the time/space complexity?
+    3. **Code Quality (20 points)**: Is it readable, well-structured, and following best practices?
+    4. **Style (10 points)**: Does it follow {language} conventions and style guidelines?
+    
+    Provide your evaluation in this EXACT format:
+    
+    ## Score: X/100
+    [Where X is a number between 0-100]
+    
+    ## Correctness Assessment
+    [Evaluate if the solution works correctly and handles edge cases]
+    
+    ## Efficiency Analysis
+    [Analyze time and space complexity, suggest optimizations if needed]
+    
+    ## Code Quality Review
+    [Comment on readability, structure, variable names, etc.]
+    
+    ## Style Feedback
+    [Check adherence to {language} style guidelines]
+    
+    ## Key Suggestions
+    - [Specific improvement suggestion 1]
+    - [Specific improvement suggestion 2]
+    - [Specific improvement suggestion 3]
+    
+    ## Overall Feedback
+    [Encouraging summary with next steps for improvement]
+    
+    Your evaluation:
+    """
+    
+    ollama_url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": "codellama",
+        "prompt": prompt,
+        "stream": False
+    }
+    
+    try:
+        response = requests.post(ollama_url, json=payload, timeout=180)
+        response.raise_for_status()
+        
+        response_data = response.json()
+        ai_review = response_data.get("response", "Error: No response from model.")
+        
+        # Extract score from AI response
+        score = 0
+        score_pattern = r'##\s*Score:\s*(\d+)\s*/\s*100'
+        score_match = re.search(score_pattern, ai_review, re.IGNORECASE)
+        if score_match:
+            score = int(score_match.group(1))
+            score = max(0, min(100, score))  # Clamp between 0-100
+        else:
+            # Fallback: try to extract any number/100 pattern
+            fallback_pattern = r'(\d+)\s*/\s*100'
+            fallback_match = re.search(fallback_pattern, ai_review)
+            if fallback_match:
+                score = int(fallback_match.group(1))
+                score = max(0, min(100, score))
+            else:
+                # If no score found, estimate based on keywords
+                if 'excellent' in ai_review.lower() or 'perfect' in ai_review.lower():
+                    score = 90
+                elif 'good' in ai_review.lower() or 'well' in ai_review.lower():
+                    score = 75
+                elif 'adequate' in ai_review.lower() or 'acceptable' in ai_review.lower():
+                    score = 60
+                else:
+                    score = 50
+        
+        # Extract suggestions
+        suggestions = []
+        suggestions_section = re.search(
+            r'##\s*Key Suggestions\s*\n(.*?)(?=\n##|\Z)', 
+            ai_review, 
+            re.DOTALL | re.IGNORECASE
+        )
+        if suggestions_section:
+            suggestion_lines = suggestions_section.group(1).strip().split('\n')
+            suggestions = [
+                line.strip('- ').strip() 
+                for line in suggestion_lines 
+                if line.strip().startswith('-')
+            ]
+        
+        # Determine if passed (score >= 70 is passing)
+        passed = score >= 70
+        
+        return Response({
+            'ai_review': ai_review,
+            'score': score,
+            'passed_tests': passed,
+            'suggestions': suggestions[:5]  # Limit to 5 suggestions
+        })
+        
+    except requests.exceptions.ConnectionError:
+        return Response(
+            {'error': 'Connection Error. Is the Ollama server running?'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {'error': f'An error occurred: {e}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

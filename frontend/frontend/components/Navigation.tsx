@@ -34,11 +34,17 @@ export default function Navigation({ theme }: { theme: 'dark' | 'light' }) {
         <Link href="/" className={linkClass}>
           🏠 Review
         </Link>
+        <Link href="/exercises" className={linkClass}>
+          📚 Exercises
+        </Link>
         <Link href="/dashboard" className={linkClass}>
           📊 Dashboard
         </Link>
         <Link href="/history" className={linkClass}>
           📜 History
+        </Link>
+        <Link href="/resources" className={`${linkClass} bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/50`}>
+          📦 Downloads
         </Link>
         <Link href="/settings" className={linkClass}>
           ⚙️ Settings
