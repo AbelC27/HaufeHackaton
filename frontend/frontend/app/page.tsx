@@ -5,8 +5,16 @@
 // because we need to use 'useState' and handle 'onClick'.
 'use client';
 
-// Import the 'useState' hook from React
-import { useState } from 'react';
+// Import React hooks for state, side-effects, and memoized callbacks
+import { useCallback, useEffect, useState } from 'react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
+
+type ReviewHistoryItem = {
+  id: string | number;
+  input_code: string;
+  review: string;
+  created_at: string | null;
+};
 
 export default function Home() {
   // --- State Variables (with TypeScript types) ---
@@ -20,6 +28,41 @@ export default function Home() {
   
   // 'isLoading' will be true while we wait for the API
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Supabase-backed review history
+  const [history, setHistory] = useState<ReviewHistoryItem[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const supabaseClient = supabase;
+
+  const fetchHistory = useCallback(async () => {
+    if (!supabaseClient) {
+      setHistory([]);
+      if (!isSupabaseConfigured) {
+        setHistoryError('Supabase client is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your frontend environment.');
+      }
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from('code_reviews')
+      .select('id, input_code, review, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Failed to fetch Supabase history:', error);
+      setHistoryError(error.message);
+      return;
+    }
+
+    const items = (data ?? []) as ReviewHistoryItem[];
+    setHistoryError(null);
+    setHistory(items);
+  }, [supabaseClient]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   // --- API Call Function ---
   // This function runs when the user clicks the button
@@ -47,6 +90,7 @@ export default function Home() {
       } else {
         // Success! Get the review text and show it
         setReview(data.review);
+        await fetchHistory();
       }
     } catch (error) {
       // Handle network errors (like if Django is down)
@@ -106,6 +150,44 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <section className="mt-12 w-full max-w-6xl">
+        <h2 className="text-2xl font-semibold mb-4">Recent Reviews</h2>
+        <div className="space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4">
+          {historyError && (
+            <p className="text-sm text-red-400">{historyError}</p>
+          )}
+
+          {!historyError && history.length === 0 && (
+            <p className="text-sm text-gray-400">
+              {isSupabaseConfigured
+                ? 'No reviews saved yet. Run a review to populate the history.'
+                : 'Supabase is not configured. Add your Supabase credentials to enable history.'}
+            </p>
+          )}
+
+          {history.map((item) => {
+            const timestamp = item.created_at
+              ? new Date(item.created_at).toLocaleString()
+              : 'Timestamp unavailable';
+
+            return (
+              <article
+                key={item.id}
+                className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0"
+              >
+                <p className="text-xs text-gray-400 mb-2">{timestamp}</p>
+                <pre className="mb-2 whitespace-pre-wrap rounded-md bg-gray-900 p-3 text-xs text-gray-200">
+                  {item.input_code}
+                </pre>
+                <pre className="whitespace-pre-wrap rounded-md bg-gray-900 p-3 text-sm text-blue-200">
+                  {item.review}
+                </pre>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </main>
   );
 }

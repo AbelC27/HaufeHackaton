@@ -1,7 +1,37 @@
+import logging
 import requests
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+
+
+logger = logging.getLogger(__name__)
+
+
+def _record_review_in_supabase(input_code: str, review_text: str) -> None:
+    """Persist the latest review to Supabase if the client is configured."""
+    supabase_client = getattr(settings, 'supabase', None)
+    if not supabase_client:
+        return
+
+    try:
+        response = (
+            supabase_client
+            .table('code_reviews')
+            .insert({'input_code': input_code, 'review': review_text})
+            .execute()
+        )
+
+        error = getattr(response, 'error', None)
+        if error:
+            message = getattr(error, 'message', None)
+            if not message and isinstance(error, dict):
+                message = error.get('message')
+            logger.warning('Supabase insert error: %s', message or error)
+    except Exception as exc:  # pragma: no cover - defensive logging only
+        logger.exception('Failed to store review in Supabase: %s', exc)
+
 
 @api_view(['POST']) # This means this function only accepts POST requests
 def review_code(request):
@@ -47,7 +77,9 @@ def review_code(request):
         # 4. Get the review text and send it back to the frontend
         response_data = response.json()
         review_text = response_data.get("response", "Error: No response from model.")
-        
+
+        _record_review_in_supabase(code_to_review, review_text)
+
         return Response({'review': review_text})
 
     except requests.exceptions.ConnectionError:
@@ -59,4 +91,41 @@ def review_code(request):
         return Response(
             {'error': f'An error occurred: {e}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def review_history(request):
+    """Return the most recent code reviews stored in Supabase."""
+    supabase_client = getattr(settings, 'supabase', None)
+    if not supabase_client:
+        return Response(
+            {'error': 'Supabase client is not configured on the server.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    try:
+        response = (
+            supabase_client
+            .table('code_reviews')
+            .select('id, input_code, review, created_at')
+            .order('created_at', desc=True)
+            .limit(10)
+            .execute()
+        )
+
+        error = getattr(response, 'error', None)
+        if error:
+            message = getattr(error, 'message', None)
+            if not message and isinstance(error, dict):
+                message = error.get('message')
+            logger.warning('Supabase history fetch error: %s', message or error)
+            return Response({'error': message or 'Failed to fetch history.'}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response({'data': getattr(response, 'data', [])})
+    except Exception as exc:
+        logger.exception('Failed to fetch review history from Supabase: %s', exc)
+        return Response(
+            {'error': 'Unable to retrieve review history at this time.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
